@@ -5,6 +5,17 @@ Advanced Python Course, Chalmers DAT515, 2021
 by Aarne Ranta
 
 
+Version 1.1, 8 December 2021: simplified the file structure a bit,
+reflected in modifications in `files/tramviz.py, views.py`.
+
+Version 1.0, 7 December 2021
+
+NOTICE: if you have already started working in Flask, in accordance with the earlier draft, you can follow the specification in `flask-labd.md`.
+The directories `static` and `templates` belong the the Flask version.
+The actual task, including bonus parts, is the same.
+But the instructions for Flask are less detailed, so we recommend the
+Django version in this document. 
+
 ## Purpose
 
 The purpose is to build a web application replicating some functionalities of apps such as [Västtrafik](https://www.vasttrafik.se/reseplanering/reseplaneraren/).
@@ -12,14 +23,28 @@ Your application will
 
 - display the complete map of tram lines
 - highlight shortest paths in terms of time and geographical distance
-- display a partial map with only a list of chosen lines
+- bonus part 1: make the calculations more precise by taking changes into account
+- bonus part 2: show actual departures from any stops by clicking at it on the map
+
 
 Here is an example screenshot:
 
 ![shortest-path](../images/app-shortest.png)
 
+In some more detail, here is how the three different screens should look:
+
+- [the home screen](https://htmlpreview.github.io/?https://github.com/aarneranta/chalmers-advanced-python/blob/main/labs/lab3/examples/home.html)
+- [the route search form](https://htmlpreview.github.io/?https://github.com/aarneranta/chalmers-advanced-python/blob/main/labs/lab3/examples/find_route.html)
+- [the search result](https://htmlpreview.github.io/?https://github.com/aarneranta/chalmers-advanced-python/blob/main/labs/lab3/examples/show_route.html)
+
+The HTML code of each of these pages is already included in the template files in `files/`.
+Thus these examples show how the pages should look when you have filled in the templates with your program.
+
 Unlike the official app, ours will not have access to the actual timetables, but just to the distances and times as defined in Labs 1 and 2.
-This is of course a severe simplification - but, on the other hand, our app will be usable for any transport system that can be represented by the class `TramNetwork`.
+This is of course a severe simplification - but, on the other hand,
+our app will be usable for any transport system that can be
+represented by the class `TramNetwork`.
+In addition, the bonus part will give access to actual traffic information from Västtrafik.
 
 Another difference from the official app is that we only run ours in a safe `localhost` environment.
 Thereby we do not have to cope with security issues, and it will also be much easier for all groups to finish the project.
@@ -27,81 +52,310 @@ Thereby we do not have to cope with security issues, and it will also be much ea
 The learning outcomes include:
 
 - visualization with more details on positions and colours
-- simple front-end construction with HTML, as well as external CSS and JavaScript
-- putting everything together by using a webb application framework
+- simple front-end construction with HTML
+- putting everything together by using a web application framework, Django
 - more details of `graphviz` library, various libraries belonging to the `flask` framework
 - virtual environments (`venv`)
 
 
+The basic lab gives 10 points and each bonus part 4 points.
+Thus the maximum is 18 points.
+
+
 ## The task
 
-We will follow a standard line of work for the `flask` network.
-There are several tutorials available, for instance, the one by [Miguel Grinberg](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world), whose chapters 1 to 3 cover most of the things we need.
+We will follow a standard line of work for the `django` network.
+There are several tutorials available, for instance,
+
+- [Django Girls Tutorial](https://tutorial.djangogirls.org/en/)
+- [Official Django Tutorial](https://docs.djangoproject.com/en/3.2/intro/tutorial01/)
 
 
-### The virtual environment
+### Files to write
 
-1. Create a `lab3` directory in your GitHub repository for the course.
-2. Follow [the tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world) to build a **virtual environment** (`venv`) for your application.
-3. Activate the environment and install `flask` and other libraries that you need.
+The final structure will look as follows.
+The files are obtained as follows:
 
-It is advisable to follow the tutorial, chapters 1 to 3, exactly before you start with your own project.
-In this way, you can make sure that everything works as required.
-But do not include this experiment in your course GitHub repository!
+- created automatically (unmarked in the diagram).
+- copied from [files](./files/) (marked `!!`).
+- slightly modified from automatic files (marked `!`)
+- explained in detail in text (marked `?`).
+- written by you (marked `??`)
+- generated by your code (marked `?!`)
+
+```
+lab3
+├── db.sqlite3
+├── manage.py
+├── mysite
+│   ├── __init__.py
+│   ├── settings.py !
+│   ├── urls.py !
+│   └── wsgi.py
+├── myvenv
+│   └── ...
+├── static
+│   ├── tramnetwork.json ?!
+│   └── tram-url.json ?!
+└── tram
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── forms.py ?
+    ├── migrations
+    │   └── __init__.py
+    ├── models.py ?
+    ├── templates ?
+    │   └── tram ?
+    │      ├── find_route.html !!
+    │      ├── home.html !!
+    │      ├── images
+    │      │   ├── gbg_tramnet.svg ?!
+    │      │   ├── wikipedia_gbg_tramnet.svg !!
+    │      │   └── shortest_path.svg ?!
+    │      └── show_route.html !!
+    ├── tests.py
+    ├── urls.py ?
+    ├── utils
+    │   ├── __init__.py
+    │   ├── graphs.py ?? 
+    │   ├── trams.py ??
+    │   └── tramviz.py ??
+    └── views.py !!
+```
 
 
-### Python files
+## The Django workflow
 
-Directly the `app` directory, you need to create the following files:
+If you have already created the project with copies of the provided
+files, you can go down to the section "Your TODO: continue from here".
 
-- `__init__.py`, standard
-- `forms.py`, standard
-- `routes.py`, standard
-- `graphs.py`, a copy from Lab 2, with import paths set to `app` 
-- `trams.py`, a copy from Lab 2, with import paths set to `app` 
-- `tramnet.py`, a new file, where most of the work happens
-- directory `static`, where you just copy
-  - `auto.css` from [./static/]
-  - `auto.js` from [./static/]
-  - `tramnetwork.json` as created in Lab 1
+The following steps must be taken at the first time:
 
-- directory `templates`, where you put
-  - `base.html` copied from [./templates/], inherited by most other pages
-  - `route.html` copied from [./templates/], for searching for a route
-  - `lines.html` which you create yourself, for just showing the network or restricting it to certain lines
-  - `index.html` which you create yourself and where you can put whatever you want, but it must give links to `route.html` and `lines.html` 
+1. create, if necessary, a directory for lab 3: `mkdir lab3`
+2. move inside it: `cd lab3`
+3. create a Python virtual environment: `python3 -m venv myvenv` or `python -m venv myvenv` if Python 3 is the only version of Windows you have installed
+4. activate the virtual environment: `source myvenv/bin/activate` on Linux/Mac, `myvenv/Scripts/activate.bat` on Windows
+5. install the necessary Python library (`networkx` is only necessary if you did the baseline version of lab 2):
+  ```
+  pip install django
+  pip install graphviz
+  pip install networkx 
+``` 
+6. run `django-admin startproject mysite .`
 
-Most part of the actual work will happen in ``tramnet.py``, which we will describe in a separate section.
-However, you may actually spend much of your time just to make this all work so that you can see the app in action in your web browser.
+At later times (every time you resume working on the project), only the `activate` step (4) is needed.
+
+## Change default settings
+
+In the generated `mysite/settings.py`, you need to change `ALLOWED_HOSTS` to
+```
+ALLOWED_HOSTS = ['127.0.0.1']
+```
+and add to the end
+
+```
+import os
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+```
+The `static` directory is needed for some files later, so create it now:
+```
+$ mkdir static
+```
 
 
-### Changes to `trams.py`
+## Create database and test run
 
-The imports of Lab 2 files are now from their app versions:
+These steps are needed at the first time:
 
-    import json
-    from app import graphs as g
-    from urllib.request import urlopen
+```
+$ python manage.py migrate
+$ python manage.py runserver
+  Starting development server at http://127.0.0.1:8000/
+```
 
-In `readTramNetwork()`, the JSON file is read from a URL, pointing to the `static` subdirectory of the app.
-The URL that can be used is
+The last command will start a server. Follow the URL to check if the installation succeeded.
 
-    http://127.0.0.1:5000/static/gbg_trams.json
+## Create the tram app
 
-Instead of `open` on a file, the content is loaded by
+```
+$ python manage.py startapp tram
+```
+Then add the line
+```
+'tram.apps.TramConfig',
+```
+to the end of the `INSTALLED_APPS` list in `settings.py`.
 
-    urlopen(url-of-tramfile).read().decode('utf8')
+### Create a model
 
-In order to position the stops well on the map, we need to know the extreme points of the network - that is, the minimum and maximum latitude and longitude.
-To this end, we add a function (or a class method in `TramNetwork`)
+Create a model for searched routes in `tram/models.py`:
+```
+from django.db import models
 
-    def extreme_positions(network):
-        # code to compute the extreme positions
-        return minlon, minlat, maxlon, maxlat
+class Route(models.Model):
+    dep = models.CharField(max_length=200)
+    dest = models.CharField(max_length=200)
 
-(TODO: The following is a bit complicated and might be given as extra.)
+    def __str__(self):
+        return self.dep + '-' + self.dest
+```
 
-In Lab2 shortest path, we have ignored the effect of changing from one line to the other.
+Then you have to migrate it to the database:
+```
+$ python manage.py makemigrations tram
+$ python manage.py migrate tram
+```
+
+### Update URL search patterns
+
+Edit the generated `mysite/urls.py` so that it looks as follows:
+```
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('tram.urls')),
+]
+```
+You have to create `tram/urls.py`:
+```
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.tram_net, name='home'),
+    path('route/', views.find_route, name='find_route'),
+    ]
+```
+
+
+### Create views
+
+In order for `tram/urls.py` to work, you have to create `tram/views.py`,
+```
+from django.shortcuts import render
+from .forms import RouteForm
+
+def tram_net(request):
+    return render(request, 'tram/home.html', {})
+
+def find_route(request):
+    form = RouteForm()
+    return render(request, 'tram/find_route.html', {'form': form})
+```
+The former function is already all we need to create the start page.
+The latter function creates a web form, but does not yet do anything with it: we will return to this later.
+
+Of course, we also need to define the ``RouteForm`` class and the HTML files.
+This is the next topic.
+
+
+### Create a form
+
+In order for `tram/views.py` to work, we need to create `tram/forms.py`,
+```
+from django import forms
+from .models import Route
+
+class RouteForm(forms.ModelForm):
+    class Meta:
+        model = Route
+        fields = ('dep', 'dest',)
+```
+
+### Create templates and static images
+
+The HTML files to be created are actually **templates**, since they contain slots where dynamic data is pasted when the server is running.
+The templates reside in a sub-sub-sub-directory, which has to be created first:
+```
+$ mkdir tram/templates
+$ mkdir tram/templates/tram
+```
+Copy the HTML files mentioned in ``tram/views.py`` from the `files` folder to the newly created `tram/templates/tram`, so that
+```
+$ ls tram/templates/tram/
+  find_route.html	home.html
+```
+Also create the `images` subdirectory:
+```
+$ mkdir tram/templates/tram/images
+```
+Then copy the Wikipedia tram network image `wikipedia_gbg_tramnet.svg` (also under `files`) there so that you can view the pages by running the server again,
+```
+$ python manage.py runserver
+```
+and opening `http://127.0.0.1:8000/` in a web browser.
+
+*One of your tasks in this lab is to replace the Wikipedia image by an SVG file that you generate yourself. You will obviously also have to change the link to the SVG file in home.html.*
+
+
+## Create dynamic content
+
+The form `find_route.html` does not find any routes yet.
+You can submit queries, but whn you press "Search", the form just gets empty without any result being produced.
+One effect happens, though: stop names that you have entered are remembered, at least for some time, so that it is easier to select them again.
+
+So now we want to create a baseline functionality that actually shows the shortest path.
+The following things are needed:
+
+- a "utility" function that actually calculates the shortest path (from your Lab 2)
+- an extended `find_route()` function in `tram/views.py`
+- a template that shows the route that is found
+
+
+### Utility functions
+
+It is a good practice to create a separate directory for "non-Django" utility functions and create an empty ``__init__.py`` file in it.
+```
+$ mkdir tram/utils
+$ touch tram/utils/__init__.py
+```
+Copy the following given files into `tram/utils`:
+
+- `graphs.py`, a mock-up, for the most part to be replaced by your Lab 2 version
+- `trams.py`, a mock-up, for the most part to be replaced by your Lab 2 
+- `tramviz.py`, with just some TODOs
+
+### Views revisited
+
+Now that you have created the utility files, you can replace the simplified `tram/views.py` with the one given in `files`.
+
+
+## Your TODO: continue from here
+
+Now it is "just" your part of the work that remains.
+Most of this work is to be done in the files in `tram/utils`.
+They contain `TODO` comments that instruct you what to do.
+
+The file `files/tramviz.py` has some parts that should be modified to match the class definitions and method names in your own `trams.py` file from Lab 2.
+This concerns in particular the function `network_graphviz()`, which does work "out of the box" if you have used certain method names and data representations.
+But since these details were not specified in Lab 2, you will have to adapt the function to your own implemantation.
+
+As the picture in `examples/show_route.html` shows, we expect three different colours to be used:
+
+- green for stops on the shortest path
+- orange for stops on quickest path
+- cyan for stops that are on both paths
+
+You can also use some other colours if you prefer.
+Other stops should be left white.
+
+Links in `home.html` and `show_route.html` should also be changed to
+your local files when you are able to generate them.
+This is likewise explained in comments in these files.
+
+How to create your own static picture `gbg_tramnet.svg` is explained
+in `tramviz.py`: just set the color uniformly to white and make any
+search.
+
+You can of course also makes the HTML files look nicer if you have time!
+
+
+## Bonus part 1
+
+In Lab2 shortest path, we ignored the effect of changing from one line to the other.
 This effect is that major factor that can make "shortest time" and "shortest distance" differ.
 Its implementation requires that we recognize when a change must be made and add a suitable number of minutes or meters to the cost.
 
@@ -114,67 +368,46 @@ One way to do this with the existing algorithms is simply to build a new graph f
 - a special change distance and change time is added between vertices that have the same stop but different times - for instance, 20 metres and 10 minutes, respectively.
 
 
-### The file `tramnet.py`
+## Bonus part 2: links to actual traffic information
 
-This is the file that makes most of the work in the app.
-It imports three modules, the first two copied to app with modified paths:
+This bonus part can be submitted even if you have not done Bonus part 1.
 
-   from app import graphs as g
-   from app import trams as t
-   import graphviz
+The challenge is to find the URLs corresponding to each stop name.
+They are given as numerical codes, for instance, Nordstan is
+```
+https://www.vasttrafik.se/reseplanering/hallplatser/9021014004945000/
+```
+and its timetable is in
+```
+https://avgangstavla.vasttrafik.se/?source=vasttrafikse-stopareadetailspage&stopAreaGid=9021014004945000
+```
+The full list of stop identifiers can be found in
+```
+https://www.vasttrafik.se/reseplanering/hallplatslista/
+```
+The algorithm is as follows:
 
-Two functions are used in the app:
+1. Investigate where and how Gids are given in the HTML document.
+2. Extract the Gids of all tram stops from the document.
+3. Create URLs for every stop.
+4. Include the URLs in the generated map.
 
-- `shortest(dep, dest)`, displaying the shortest path on the map
-- `focused(lines)`, to display only the listed lines
-
-A baseline implementation could use `graphs.visualize` from Lab 2.
-But here we want more:
-
-- the stops should be put into positions that correspond to their longitude and latitude;
-- there should be separate, coloured edges for each tramline that serves the same edge;
-- two possibly different shortest paths should be shown: the temporally and geographically shortest.
-
-Moreover, there is a technical difference:
-
-- the map should be generated in the SVG format (Scalable Vector Graphics) and piped directly to the app.
-
-This, however, is easy to implement: as the last steps of visualization, use
-
-    dot.format = 'svg'
-    return dot.pipe().decode('utf-8')
-
-The most complex part of this file - and the whole Lab 3 - is to make sure that the positions and colours come out right.
-Here is a possible sequence of steps to follow:
-
-- use `graphs.extreme_positions()` to compute the corners, the width, and the height of the map in geographic degrees;
-- calculate `x` coordinates from *longitudes* by subtracting the minimal longitude from the actual longitude, and multiplying with a suitable constant (500 works well for me);
-- calculate `y` coordinates similarly from latitudes;
-- create a canvas of suitable size for the map, by for instance
-
-    dot = graphviz.Graph(engine='fdp', graph_attr={'size': '12,12'})
-
-which works fine for me (the engine 'fdp' is needed to preserve absolute positions);
-- compute the shortest paths, with respect to both distance and time;
-- print the nodes of the map, displaying the name of each tram stop and colouring it in three of different colours depending on if it appears on the shortest time path, shortest distance path, or both (see the picture at the beginning of this document, using yellow, cyan, and lightgreen, respectively);
-- draw edges corresponding to each line with their colors - the following color map is an approximation of what is actually used
-
-    {1: 'gray', 2: 'yellow', 3: 'blue', 4: 'green', 5: 'red',
-     6: 'orange', 7: 'brown', 8: 'purple', 9: 'blue',
-     10: 'lightgreen', 11: 'black', 13: 'pink'}
-
-- print the listing of the quickest path and its duration, and the shortest (if different) and its length.
+The standard library for parsing HTML is
+```
+https://docs.python.org/3/library/html.parser.html
+```
+A slightly more convenient third party library can also be used:
+```
+https://www.crummy.com/software/BeautifulSoup/bs4/doc/
+```
 
 
+## Submission
 
-### Autocompletion
+Via a GitHub link in Canvas, as usual.
+You are recommended to use `.gitignore` in order not to store the virtual environment directory.
 
-The route finding page helps users with autocompletion of tram stop names:
+Indicate in your Canvas message whether you claim bonus points for Bonus task 1 or 2 or both.
 
-![autocompletion](../images/find-auto.png)
-
-We provide ready-made Javascript and CSS files, given in the [static](./static) directory.
-These files are copied and slightly modified from [W3Schools](https://www.w3schools.com/howto/howto_js_autocomplete.asp).
-Since this kind of communication is not directly covered in Grinberg's tutorial, we also provide the HTML template file [route.html](./templates/route.html).
-
-
+In addition to inspecting your code, we will organize a Zoom meeting where you demonstrate your application to a teacher.
+These meetings will be scheduled in the first week of January, and a registration form will be published before the lab deadline.
